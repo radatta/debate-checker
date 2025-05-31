@@ -1,101 +1,100 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
+import Link from "next/link";
+
+type DebateWithRelations = {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  speakers: { id: string; name: string; role: string | null }[];
+  claims_count: number;
+};
+
+async function DebateList() {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  // First get debates with speakers
+  const { data: debates, error } = await supabase
+    .from("debate")
+    .select(
+      `
+      id,
+      title,
+      description,
+      start_time,
+      speakers:speaker(id, name, role)
+    `
+    )
+    .order("start_time", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching debates:", error);
+    return <div>Error loading debates</div>;
+  }
+
+  // Get claims count for each debate
+  const debatesWithCounts = await Promise.all(
+    debates?.map(async (debate) => {
+      const { count } = await supabase
+        .from("claim")
+        .select("*", { count: "exact", head: true })
+        .eq("debate_id", debate.id);
+
+      return {
+        ...debate,
+        claims_count: count || 0,
+      };
+    }) || []
+  );
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {debatesWithCounts?.map((debate) => (
+        <Link
+          key={debate.id}
+          href={`/debates/${debate.id}`}
+          className="block p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+        >
+          <h2 className="text-xl font-semibold mb-2">{debate.title}</h2>
+          <p className="text-gray-600 mb-4">{debate.description}</p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {debate.speakers?.map((speaker) => (
+              <span
+                key={speaker.id}
+                className="px-2 py-1 bg-gray-100 rounded-full text-sm"
+              >
+                {speaker.name}
+              </span>
+            ))}
+          </div>
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>{formatDate(debate.start_time)}</span>
+            <span>{debate.claims_count} claims</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Debate Fact Checker</h1>
+        <Button asChild>
+          <Link href="/debates/new">New Debate</Link>
+        </Button>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <Suspense fallback={<div>Loading debates...</div>}>
+        <DebateList />
+      </Suspense>
     </div>
   );
 }
