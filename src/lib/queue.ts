@@ -140,10 +140,16 @@ export function startClaimWorker() {
             }
         },
         {
-            connection: {
-                host: process.env.REDIS_HOST || 'localhost',
-                port: parseInt(process.env.REDIS_PORT || '6379'),
-            },
+            connection: process.env.NODE_ENV === 'production'
+                ? {
+                    host: process.env.PROD_REDIS_HOST || 'localhost',
+                    port: parseInt(process.env.PROD_REDIS_PORT || '6379'),
+                    password: process.env.PROD_REDIS_PASSWORD || '',
+                }
+                : {
+                    host: process.env.REDIS_HOST || 'localhost',
+                    port: parseInt(process.env.REDIS_PORT || '6379'),
+                },
         }
     );
 
