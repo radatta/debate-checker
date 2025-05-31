@@ -13,6 +13,7 @@ export const claimQueue = new Queue('claims', {
         : {
             host: process.env.REDIS_HOST || 'localhost',
             port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD || '',
         },
     defaultJobOptions: {
         attempts: 3,
@@ -149,6 +150,7 @@ export function startClaimWorker() {
                 : {
                     host: process.env.REDIS_HOST || 'localhost',
                     port: parseInt(process.env.REDIS_PORT || '6379'),
+                    password: process.env.REDIS_PASSWORD || '',
                 },
         }
     );
