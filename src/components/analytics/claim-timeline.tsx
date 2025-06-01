@@ -146,15 +146,15 @@ export function ClaimTimeline({
 
           {/* Timeline points */}
           {timelineData.map((point, i) => {
-            const x = xScale(point.timestamp);
-            const y = getPointY(point);
+            const x = xScale(point.timestamp) ?? 0;
+            const y = getPointY(point) ?? 0;
             const color = getVerdictColorClass(point.verdict);
 
             return (
               <Group key={i}>
                 <Circle
-                  cx={x}
-                  cy={y}
+                  cx={x as number}
+                  cy={y as number}
                   r={6}
                   fill={color}
                   stroke="white"
@@ -171,50 +171,56 @@ export function ClaimTimeline({
           })}
 
           {/* X-axis labels */}
-          {xScale.ticks(5).map((tick, i) => (
-            <Group key={i}>
-              <Line
-                from={{ x: xScale(tick), y: innerHeight }}
-                to={{ x: xScale(tick), y: innerHeight + 5 }}
-                stroke="#9CA3AF"
-              />
-              <Text
-                x={xScale(tick)}
-                y={innerHeight + 20}
-                textAnchor="middle"
-                fontSize={12}
-                fill="#6B7280"
-              >
-                {tick.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Text>
-            </Group>
-          ))}
+          {xScale.ticks(5).map((tick, i) => {
+            const xTick = xScale(tick) ?? 0;
+            return (
+              <Group key={i}>
+                <Line
+                  from={{ x: xTick as number, y: innerHeight }}
+                  to={{ x: xTick as number, y: innerHeight + 5 }}
+                  stroke="#9CA3AF"
+                />
+                <Text
+                  x={xTick as number}
+                  y={innerHeight + 20}
+                  textAnchor="middle"
+                  fontSize={12}
+                  fill="#6B7280"
+                >
+                  {tick.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Text>
+              </Group>
+            );
+          })}
 
           {/* Y-axis labels */}
           {yScale
             .ticks(Math.min(5, Math.max(...yScale.domain())))
-            .map((tick, i) => (
-              <Group key={i}>
-                <Line
-                  from={{ x: -5, y: yScale(tick) }}
-                  to={{ x: 0, y: yScale(tick) }}
-                  stroke="#9CA3AF"
-                />
-                <Text
-                  x={-10}
-                  y={yScale(tick)}
-                  textAnchor="end"
-                  verticalAnchor="middle"
-                  fontSize={12}
-                  fill="#6B7280"
-                >
-                  {tick}
-                </Text>
-              </Group>
-            ))}
+            .map((tick, i) => {
+              const yTick = yScale(tick) ?? 0;
+              return (
+                <Group key={i}>
+                  <Line
+                    from={{ x: -5, y: yTick as number }}
+                    to={{ x: 0, y: yTick as number }}
+                    stroke="#9CA3AF"
+                  />
+                  <Text
+                    x={-10}
+                    y={yTick as number}
+                    textAnchor="end"
+                    verticalAnchor="middle"
+                    fontSize={12}
+                    fill="#6B7280"
+                  >
+                    {tick}
+                  </Text>
+                </Group>
+              );
+            })}
         </Group>
 
         {/* Title */}
