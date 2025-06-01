@@ -2,19 +2,29 @@ import { Queue, Worker } from 'bullmq';
 import { createServerClient } from '@supabase/ssr';
 import { createPerplexityClient } from './perplexity';
 
+if (!process.env.REDIS_HOST || !process.env.REDIS_PORT || !process.env.REDIS_PASSWORD) {
+    throw new Error('REDIS_HOST, REDIS_PORT, and REDIS_PASSWORD must be set');
+}
+
+if (!process.env.PROD_REDIS_HOST || !process.env.PROD_REDIS_PORT || !process.env.PROD_REDIS_PASSWORD) {
+    throw new Error('PROD_REDIS_HOST, PROD_REDIS_PORT, and PROD_REDIS_PASSWORD must be set');
+}
+
+const redisConnection = process.env.NODE_ENV === 'production'
+    ? {
+        host: process.env.PROD_REDIS_HOST,
+        port: parseInt(process.env.PROD_REDIS_PORT),
+        password: process.env.PROD_REDIS_PASSWORD,
+    }
+    : {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD,
+    };
+
 // Queue for processing claims
 export const claimQueue = new Queue('claims', {
-    connection: process.env.NODE_ENV === 'production'
-        ? {
-            host: process.env.PROD_REDIS_HOST || 'localhost',
-            port: parseInt(process.env.PROD_REDIS_PORT || '6379'),
-            password: process.env.PROD_REDIS_PASSWORD || '',
-        }
-        : {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-            password: process.env.REDIS_PASSWORD || '',
-        },
+    connection: redisConnection,
     defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -140,12 +150,8 @@ export function startClaimWorker() {
                 throw error;
             }
         },
-{
-            connection: {
-                    host: process.env.REDIS_HOST || 'localhost',
-                    port: parseInt(process.env.REDIS_PORT || '6379'),
-                    password: process.env.REDIS_PASSWORD || '',
-                },
+        {
+            connection: redisConnection,
         }
     );
 

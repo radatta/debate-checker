@@ -100,3 +100,5 @@ CREATE POLICY "Enable all operations for claims" ON claim
 
 CREATE POLICY "Enable all operations for verdicts" ON verdict
     FOR ALL USING (true) WITH CHECK (true);
+
+ALTER publication supabase_realtime ADD TABLE public.claim;
