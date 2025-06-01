@@ -100,37 +100,3 @@ CREATE POLICY "Enable all operations for claims" ON claim
 
 CREATE POLICY "Enable all operations for verdicts" ON verdict
     FOR ALL USING (true) WITH CHECK (true);
-
--- Insert some example data
-INSERT INTO debate (title, description, start_time) VALUES 
-    ('Presidential Debate 2024', 'First presidential debate of the 2024 election season', NOW()),
-    ('Climate Change Discussion', 'Panel discussion on climate policies', NOW() - INTERVAL '1 day');
-
--- Get the debate IDs for speakers
-DO $$
-DECLARE
-    debate1_id UUID;
-    debate2_id UUID;
-    speaker1_id UUID;
-    speaker2_id UUID;
-BEGIN
-    -- Get debate IDs
-    SELECT id INTO debate1_id FROM debate WHERE title = 'Presidential Debate 2024';
-    SELECT id INTO debate2_id FROM debate WHERE title = 'Climate Change Discussion';
-    
-    -- Insert speakers
-    INSERT INTO speaker (name, role, debate_id) VALUES 
-        ('John Candidate', 'Democratic Nominee', debate1_id),
-        ('Jane Opponent', 'Republican Nominee', debate1_id),
-        ('Dr. Climate Expert', 'Climate Scientist', debate2_id),
-        ('Policy Maker', 'Government Official', debate2_id);
-    
-    -- Get speaker IDs for sample claims
-    SELECT id INTO speaker1_id FROM speaker WHERE name = 'John Candidate';
-    SELECT id INTO speaker2_id FROM speaker WHERE name = 'Jane Opponent';
-    
-    -- Insert sample claims
-    INSERT INTO claim (text, timestamp, debate_id, speaker_id) VALUES 
-        ('Unemployment rate has decreased by 2% in the last year', NOW() - INTERVAL '30 minutes', debate1_id, speaker1_id),
-        ('Crime rates in major cities have increased by 15%', NOW() - INTERVAL '25 minutes', debate1_id, speaker2_id);
-END $$;
