@@ -34,11 +34,6 @@ export const claimQueue = new Queue('claims', {
     },
 });
 
-// Add a delay function
-function delay(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // Worker for processing claims
 export function startClaimWorker() {
     const worker = new Worker(
@@ -47,9 +42,6 @@ export function startClaimWorker() {
             const { claimId } = job.data;
 
             try {
-                // Wait for 5 seconds
-                await delay(5000);
-
                 // Create Supabase client for server-side operations in worker context
                 const supabase = createServerClient(
                     process.env.NEXT_PUBLIC_SUPABASE_URL!,
