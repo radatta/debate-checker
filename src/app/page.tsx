@@ -5,15 +5,6 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 
-type DebateWithRelations = {
-  id: string;
-  title: string;
-  description: string | null;
-  start_time: string;
-  speakers: { id: string; name: string; role: string | null }[];
-  claims_count: number;
-};
-
 async function DebateList() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);

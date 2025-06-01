@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { LiveTranscript } from "@/components/live-transcript";
 import { VerdictDistribution } from "@/components/analytics/verdict-distribution";
 import { SpeakerStats } from "@/components/analytics/speaker-stats";
-import { ClaimTimeline } from "@/components/analytics/claim-timeline";
 import { ClaimStatusOverlay } from "@/components/claim-status-overlay";
 
 interface DashboardProps {
@@ -20,7 +19,7 @@ interface DashboardProps {
 
 export function Dashboard({ debate: initialDebate }: DashboardProps) {
   const debate = useRealtimeDebate(initialDebate);
-  const { isLive, startTranscription, stopTranscription, transcriptSegments } =
+  const { isLive, startTranscription, stopTranscription } =
     useRealtimeTranscription(debate.id);
 
   const [activeTab, setActiveTab] = useState<"live" | "analytics" | "speakers">(

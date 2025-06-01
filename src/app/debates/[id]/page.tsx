@@ -46,9 +46,11 @@ export default async function DebatePage({
   }
 
   // Sort claims by timestamp
-  const sortedClaims = debate.claims?.sort(
-    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  ) || [];
+  const sortedClaims =
+    debate.claims?.sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    ) || [];
 
   const debateWithRelations = {
     ...debate,

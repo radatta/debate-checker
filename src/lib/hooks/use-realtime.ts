@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ClaimWithRelations, DebateWithRelations } from "@/lib/types";
+import { DebateWithRelations } from "@/lib/types";
 
 export function useRealtimeDebate(debate: DebateWithRelations) {
     const [currentDebate, setCurrentDebate] = useState<DebateWithRelations>(debate);

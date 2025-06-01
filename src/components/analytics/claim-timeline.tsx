@@ -6,7 +6,6 @@ import { scaleTime, scaleLinear } from "@visx/scale";
 import { Circle, Line } from "@visx/shape";
 import { Text } from "@visx/text";
 import { ClaimWithRelations, VerdictType } from "@/lib/types";
-import { getVerdictColor } from "@/lib/utils";
 
 interface ClaimTimelineProps {
   claims: ClaimWithRelations[];

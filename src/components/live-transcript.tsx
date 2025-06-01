@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, FormEvent } from "react";
 import { useRealtimeTranscription } from "@/lib/hooks/use-realtime";
-import { ClaimWithRelations, ClaimStatus } from "@/lib/types";
+import { ClaimWithRelations } from "@/lib/types";
 import { getVerdictColor } from "@/lib/utils";
 
 interface TranscriptSegment {
@@ -20,7 +20,6 @@ interface LiveTranscriptProps {
 
 export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
-  const [currentSegment, setCurrentSegment] = useState<string>("");
   const [manualInputText, setManualInputText] = useState<string>("");
   const { transcriptSegments } = useRealtimeTranscription(debateId);
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -40,7 +39,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
     if (transcriptRef.current) {
       transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
     }
-  }, [transcript, currentSegment]);
+  }, [transcript]);
 
   // Demo function to add mock transcript segments
   const addMockSegment = () => {
@@ -464,32 +463,6 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
             </div>
           </div>
         ))}
-
-        {/* Current partial segment */}
-        {currentSegment && (
-          <div className="group opacity-60">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-sm font-medium text-gray-600">
-                    Speaking...
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {new Date().toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="text-gray-600 leading-relaxed italic">
-                  {currentSegment}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
