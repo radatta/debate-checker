@@ -207,6 +207,11 @@ export function NewDebateForm() {
         {errors.speakers && !Array.isArray(errors.speakers) && (
           <p className="mt-1 text-sm text-red-500">{errors.speakers.message}</p>
         )}
+        {speakers.length < 2 && (
+          <p className="mt-1 text-sm text-red-500">
+            Please add at least two speakers.
+          </p>
+        )}
       </div>
 
       <div className="flex justify-end gap-4">
