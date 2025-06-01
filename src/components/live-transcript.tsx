@@ -8,17 +8,27 @@ import { getVerdictColor } from "@/lib/utils";
 interface TranscriptSegment {
   id: string;
   text: string;
-  speaker: string;
+  speaker: Speaker;
   timestamp: string;
   claims?: ClaimWithRelations[];
+}
+
+interface Speaker {
+  id: string;
+  name: string;
 }
 
 interface LiveTranscriptProps {
   debateId: string;
   isLive: boolean;
+  speakers: Speaker[];
 }
 
-export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
+export function LiveTranscript({
+  debateId,
+  isLive,
+  speakers,
+}: LiveTranscriptProps) {
   const [transcript, setTranscript] = useState<TranscriptSegment[]>([]);
   const [manualInputText, setManualInputText] = useState<string>("");
   const { transcriptSegments } = useRealtimeTranscription(debateId);
@@ -28,6 +38,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
   const [audioError, setAudioError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const [currentSpeaker, setCurrentSpeaker] = useState<Speaker>(speakers[0]);
 
   // Update transcript when new segments arrive via Supabase Realtime
   useEffect(() => {
@@ -102,7 +113,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
     const newSegment = {
       id: `segment-${Date.now()}`,
       text: randomText,
-      speaker: `Speaker ${Math.random() > 0.5 ? "A" : "B"}`,
+      speaker: currentSpeaker,
       timestamp: new Date().toISOString(),
       claims: [],
     };
@@ -117,7 +128,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: randomText,
-          speaker_id: "32ae3897-07b0-496e-b210-9a4539a1e78a",
+          speaker_id: currentSpeaker.id,
           timestamp: Date.now(),
         }),
       }).then(() => {
@@ -135,7 +146,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
     const newSegment: TranscriptSegment = {
       id: `manual-segment-${Date.now()}`,
       text: newSegmentText,
-      speaker: "Manual Input",
+      speaker: currentSpeaker,
       timestamp: new Date().toISOString(),
       claims: [],
     };
@@ -153,7 +164,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: newSegmentText,
-            speaker_id: "32ae3897-07b0-496e-b210-9a4539a1e78a",
+            speaker_id: currentSpeaker.id,
             timestamp: Date.now(),
           }),
         }
@@ -225,7 +236,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
               const newSegment: TranscriptSegment = {
                 id: `audio-segment-${Date.now()}`,
                 text: transcribedText,
-                speaker: "Audio Input",
+                speaker: currentSpeaker,
                 timestamp: new Date().toISOString(),
                 claims: [],
               };
@@ -236,7 +247,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   text: transcribedText,
-                  speaker_id: "32ae3897-07b0-496e-b210-9a4539a1e78a",
+                  speaker_id: currentSpeaker.id,
                   timestamp: Date.now(),
                 }),
               })
@@ -380,7 +391,20 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
         </div>
       </div>
 
-      {/* Manual Text Input Area - Added Here */}
+      {/* Speaker Selection Buttons */}
+      <div className="p-4 border-b flex space-x-2">
+        {speakers.map((speaker) => (
+          <button
+            key={speaker.id}
+            onClick={() => setCurrentSpeaker(speaker)}
+            className={`px-4 py-2 text-sm rounded ${currentSpeaker.name === speaker.name ? "bg-green-500 text-white" : "bg-gray-200 text-gray-700"}`}
+          >
+            {speaker.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Manual Text Input Area */}
       <form
         onSubmit={handleManualSubmit}
         className="p-4 border-b flex items-center space-x-2"
@@ -402,7 +426,7 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
         </button>
       </form>
 
-      {/* Audio Input Area - Added Here */}
+      {/* Audio Input Area */}
       <div className="p-4 border-b">
         {!isRecording ? (
           <button
@@ -434,14 +458,14 @@ export function LiveTranscript({ debateId, isLive }: LiveTranscriptProps) {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-xs font-medium text-blue-600">
-                    {segment.speaker.charAt(0).toUpperCase()}
+                    {segment.speaker?.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
                   <span className="text-sm font-medium text-gray-900">
-                    {segment.speaker}
+                    {segment.speaker.name}
                   </span>
                   <span className="text-xs text-gray-500">
                     {new Date(segment.timestamp).toLocaleTimeString()}

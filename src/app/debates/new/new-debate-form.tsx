@@ -17,7 +17,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
-  speakers: z.array(speakerSchema).min(1, "At least one speaker is required"),
+  speakers: z.array(speakerSchema).min(2, "At least two speakers are required"),
 });
 
 type FormData = z.infer<typeof formSchema>;

@@ -155,7 +155,11 @@ export function Dashboard({ debate: initialDebate }: DashboardProps) {
                 <h2 className="text-lg font-semibold">Live Transcript</h2>
               </div>
               <div className="h-full">
-                <LiveTranscript debateId={debate.id} isLive={isLive} />
+                <LiveTranscript
+                  debateId={debate.id}
+                  isLive={isLive}
+                  speakers={debate.speakers}
+                />
               </div>
             </div>
 
