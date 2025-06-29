@@ -1,139 +1,198 @@
-# Real-Time Debate Fact-Checking Platform
+# Real-Time Debate Checker
 
-A Next.js 14 (React 18) application that transcribes live debates, detects factual claims, and uses the Perplexity API to verify statements in real time. Results are visualized for viewers and analysts, providing instant, transparent feedback on debate accuracy.
+> A full-stack platform that transcribes live debates, detects factual statements, and fact-checks them with AI – broadcasting verified verdicts and visual analytics in real time
+
+---
+
+## Overview
+
+- **Purpose / Goal** – Provide audiences and analysts with immediate, transparent insight into the accuracy of spoken claims during live political, academic, or broadcast debates.
+- **Intended Users** – Journalists, fact-checkers, debate moderators, broadcasters, civic tech organizations, or any viewer who wants a truth-meter while watching debates.
+- **Problem Solved** – Manual fact-checking is time-consuming and usually published _after_ an event. This project automates the pipeline end-to-end so viewers receive verifiable information while the debate is still happening.
 
 ---
 
 ## Features
 
-- **Live Speech-to-Text** : Real-time transcription of debate audio/video streams using OpenAI Whisper or Rev AI.
-- **Claim Detection** : NLP-powered extraction of factual claims frfom transcripts.
-- **AI Fact-Checking** : Each claim is sent to the Perplexity API for verification, with verdicts and evidence returned.
-- **Real-Time Updates** : WebSocket-powered dashboard displays claims and verdicts as they happen.
-- **Visual Analytics** : Interactive charts (D3.js/Visx) show claim timelines, sources, speaker stats, and topic breakdowns.
-- **Persistent Storage** : PostgreSQL for debates, claims, verdicts; RedisJSON for real-time access.
-- **Scalable Processing** : BullMQ (Redis) for distributed claim processing and retries.
-- **Modern UI** : Built with Tailwind CSS and shadcn/ui for accessibility and speed.
+- 🎙️ **Live Speech-to-Text** – Streams audio/video into AssemblyAI and returns near-instant transcripts.
+- 🔍 **Automatic Claim Detection** – NLP logic flags sentences that sound like factual assertions (dates, numbers, citations, etc.).
+- 🤖 **AI Fact-Checking** – Each claim is sent to Perplexity's API which returns a verdict (TRUE/FALSE/PARTIALLY_TRUE/MISLEADING/UNVERIFIABLE), confidence score, evidence, reasoning, and source links.
+- 📈 **Distributed Processing** – BullMQ + Redis queue allow horizontal scaling and retries for heavy verification workloads.
+- ⚡ **Real-Time Updates** – Socket.io pushes new claims and verdicts instantly to connected dashboards and overlays.
+- 📊 **Interactive Analytics** – D3/Visx charts for verdict distribution, claim timelines, and per-speaker stats.
+- 🗄️ **Persistent Storage** – Postgres tables (via Supabase) for debates, claims, verdicts; RedisJSON for millisecond read access.
+- 🎨 **Modern UI** – Tailwind CSS + shadcn/ui components yield an accessible, mobile-friendly interface.
+- 🛠️ **One-Click Worker** – A single Bun script (`bun scripts/start-worker.ts`) boots a dedicated fact-checking worker.
+- 🌐 **Edge-ready** – Next.js 14 App Router routes optionally deploy to Vercel Edge for lower latency.
+- 👩‍💻 **Dev-Friendly** – TypeScript everywhere, Husky pre-commit hooks, Jest/Vitest ready (placeholders), Docker-compose templates (planned).
 
 ---
 
 ## Tech Stack
 
-- **Frontend** : Next.js 14 (App Router, React 18), TypeScript, Tailwind CSS, shadcn/ui, SWR/React Query, D3.js/Visx, Socket.io Client
-- **Backend** : Node.js 18+, TypeScript, Next.js API Routes (Edge & Node), Socket.io Server, BullMQ, RedisJSON, Supabase (utilizing client and server modules within `src/lib/supabase` for database interactions, authentication, and real-time features), Perplexity API, Whisper/Rev AI, FFmpeg
-- **DevOps** : Vercel, AWS Lambda/Google Cloud Functions, Cloudflare Workers, New Relic/Dynatrace, GitHub Actions, Docker, Sentry
+### Frontend
+
+- **Next.js 14 (React 18 App Router)**
+- **TypeScript**
+- **Tailwind CSS + shadcn/ui**
+- **SWR / React Query** (SWR-style hooks)
+- **D3.js / Visx** for charts
+- **Socket.io-client** for real-time state
+
+### Backend
+
+- **Node 18+, executed with [Bun](https://bun.sh) runtime** – chosen for faster install/start.
+- **Next.js API Routes** for REST/Edge endpoints
+- **BullMQ + Redis / RedisJSON** for job queueing & pub-sub
+- **Supabase (PostgreSQL, Realtime, Auth)**
+- **Perplexity API** for factual verification
+- **AssemblyAI** for speech-to-text
+
+### Architecture & Design
+
+- **Event-Driven Pipeline** – Each stage (transcribe ➜ detect ➜ queue ➜ verify ➜ broadcast) is decoupled via jobs & websockets.
+- **Hexagonal / Ports-and-Adapters** flavour – external services abstracted in `src/lib/*` so they can be swapped or mocked.
+- **Optimistic UI** – Claims appear instantly with a _Verifying…_ badge which updates when the verdict job finishes.
 
 ---
 
-## System Architecture
+## How It Works (Workflow)
 
-<pre class="not-prose w-full rounded font-mono text-sm font-extralight"><div class="codeWrapper text-textMainDark selection:!text-superDark selection:bg-superDuper/10 bg-offset dark:bg-offsetDark my-md relative flex flex-col rounded font-mono text-sm font-thin"><div class="translate-y-xs -translate-x-xs bottom-xl mb-xl sticky top-0 flex h-0 items-start justify-end"><button type="button" class="focus-visible:bg-offsetPlus dark:focus-visible:bg-offsetPlusDark hover:bg-offsetPlus text-textOff dark:text-textOffDark hover:text-textMain dark:hover:bg-offsetPlusDark dark:hover:text-textMainDark font-sans focus:outline-none outline-none outline-transparent transition duration-300 ease-out font-sans  select-none items-center relative group/button  justify-center text-center items-center rounded-full cursor-pointer active:scale-[0.97] active:duration-150 active:ease-outExpo origin-center whitespace-nowrap inline-flex text-sm h-8 aspect-square"><div class="flex items-center min-w-0 font-medium gap-1.5 justify-center"><div class="flex shrink-0 items-center justify-center size-4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7999999999999998" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-copy "><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"></path><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"></path></svg></div></div></button></div><div class="-mt-xl"><div><div class="text-text-200 bg-background-300 py-xs px-sm inline-block rounded-br rounded-tl-[3px] font-thin">text</div></div><div class="pr-lg"><span><code><span><span>graph TD
-</span></span><span>    A[Audio/Video Stream] --> B[Transcription (Whisper/Rev AI)]
-</span><span>    B --> C[Claim Detection (NLP)]
-</span><span>    C --> D[Claim Queue (BullMQ/Redis)]
-</span><span>    D --> E[Perplexity API Verification]
-</span><span>    E --> F[Verdict & Evidence]
-</span><span>    F --> G[WebSocket Server]
-</span><span>    G --> H[Next.js Frontend Dashboard]
-</span><span>    F --> I[Supabase/RedisJSON Storage]
-</span><span>    H --> J[Data Visualization (D3.js/Visx)]
-</span><span></span></code></span></div></div></div></pre>
+1. **Ingest** – Browser or server sends an audio/video stream.
+2. **Transcription** – `/api/transcribe-assemblyai` calls AssemblyAI to receive real-time text.
+3. **Claim Detection** – `/api/detect-claims` runs lightweight regex + NLP heuristics (see `src/lib/claim-detection.ts`).
+4. **Queue** – Detected claim IDs are enqueued in Redis (`claimQueue`).
+5. **Fact-Checking Worker** – `startClaimWorker()` pulls jobs, queries Perplexity, and stores verdicts.
+6. **Broadcast** – Supabase Realtime & Socket.io emit changes to clients; UI overlays animate new verdicts.
+7. **Visualize** – Dashboard components render transcripts, statistics, and charts in real time.
 
 ---
 
-## Development Plan
+## Setup & Installation
 
-## Phase 1: Core Setup
+### Prerequisites
 
-- [ ] Scaffold Next.js 14 project with TypeScript, Tailwind, shadcn/ui.
-- [ ] Set up Supabase and RedisJSON.
-- [ ] Implement Socket.io server/client for real-time data.
+- **Bun 1.0+** (replaces npm/yarn)
+- **Node 18+**
+- **Docker** _(recommended)_ or locally running instances of:
+  - **PostgreSQL 14+** (or Supabase project)
+  - **Redis 6+** with the `json` module
+- A **Perplexity API key** (set `PPLX_KEY`)
 
-## Phase 2: Live Transcription & Claim Detection
+### Environment Variables
 
-- [ ] Integrate Whisper/Rev AI for real-time transcription.
-- [ ] Build claim detection module (regex + NLP).
-- [ ] Store claims in PostgreSQL and RedisJSON.
+Create `.env.local`
 
-## Phase 3: Fact-Checking Pipeline
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=yourRedisPw
+PPLX_KEY=yourPerplexityKey
+# Production redis (optional)
+PROD_REDIS_HOST=...
+PROD_REDIS_PORT=...
+PROD_REDIS_PASSWORD=...
+```
 
-- [ ] Integrate Perplexity API for claim verification.
-- [ ] Use BullMQ for distributed, scalable claim processing.
-- [ ] Return verdicts/evidence via Socket.io.
+### Steps
 
-## Phase 4: Frontend & Visualization
+```bash
+# 1. Clone
+git clone https://github.com/radatta/debate-checker && cd debate-checker
 
-- [ ] Build live dashboard for transcript, claims, verdicts.
-- [ ] Implement D3.js/Visx charts for analytics.
-- [ ] Add overlays for real-time claim status.
+# 2. Install dependencies
+bun install
 
-## Phase 5: Performance & Scaling
+# 3. Run database migrations (if using local Postgres)
+#    Or push SQL inside Supabase Studio
+bunx supabase db push
 
-- [ ] Move endpoints to Next.js Edge Runtime.
-- [ ] Deploy on Vercel, use Cloudflare Workers for edge logic.
-- [ ] Set up AIOps monitoring and error tracking.
+# 4. Start Next.js dev server
+bun run dev
 
-## Phase 6: Advanced Features
+# 5. In another terminal, start the BullMQ worker
+bun run worker   # alias for "bun scripts/start-worker.ts"
 
-- [ ] Continuous claim re-evaluation as new evidence appears.
-- [ ] User authentication (OAuth), role-based access.
-- [ ] Audit trails and abuse prevention.
+# 6. Open http://localhost:3000 and create a new debate.
+```
 
----
+## Usage Examples
 
-## Environment Variables
+```bash
+# Detect claims in a test string
+curl -X POST http://localhost:3000/api/detect-claims \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "The Earth is the third planet from the Sun and 149.6 million km away."}'
 
-- `PPLX_KEY`: Perplexity API Key
-- `SUPABASE_URL`: URL for your Supabase project
-- `SUPABASE_ANON_KEY`: Publicly safe anonymous key for client-side Supabase access
-- `SUPABASE_SERVICE_ROLE_KEY`: Secret service role key for server-side (admin) Supabase access
-- `REDIS_URL`: Redis connection string
-- `TRANSCRIBE_API_KEY`: Whisper/Rev AI API Key
+# Expected JSON
+{
+  "claims": [
+    {
+      "text": "The Earth is the third planet from the Sun and 149.6 million km away.",
+      "status": "PENDING"
+    }
+  ]
+}
+```
 
----
-
-## Example API Usage
-
-<pre class="not-prose w-full rounded font-mono text-sm font-extralight"><div class="codeWrapper text-textMainDark selection:!text-superDark selection:bg-superDuper/10 bg-offset dark:bg-offsetDark my-md relative flex flex-col rounded font-mono text-sm font-thin"><div class="translate-y-xs -translate-x-xs bottom-xl mb-xl sticky top-0 flex h-0 items-start justify-end"><button type="button" class="focus-visible:bg-offsetPlus dark:focus-visible:bg-offsetPlusDark hover:bg-offsetPlus text-textOff dark:text-textOffDark hover:text-textMain dark:hover:bg-offsetPlusDark dark:hover:text-textMainDark font-sans focus:outline-none outline-none outline-transparent transition duration-300 ease-out font-sans  select-none items-center relative group/button  justify-center text-center items-center rounded-full cursor-pointer active:scale-[0.97] active:duration-150 active:ease-outExpo origin-center whitespace-nowrap inline-flex text-sm h-8 aspect-square"><div class="flex items-center min-w-0 font-medium gap-1.5 justify-center"><div class="flex shrink-0 items-center justify-center size-4"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7999999999999998" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-copy "><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z"></path><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1"></path></svg></div></div></button></div><div class="-mt-xl"><div><div class="text-text-200 bg-background-300 py-xs px-sm inline-block rounded-br rounded-tl-[3px] font-thin">typescript</div></div><div class="pr-lg"><span><code><span><span class="token token">// Example: Send claim to Perplexity API</span><span>
-</span></span><span><span></span><span class="token token">const</span><span></span><span class="token token function-variable">verifyClaim</span><span></span><span class="token token operator">=</span><span></span><span class="token token">async</span><span></span><span class="token token punctuation">(</span><span>claim</span><span class="token token operator">:</span><span></span><span class="token token">string</span><span class="token token punctuation">)</span><span></span><span class="token token operator">=></span><span></span><span class="token token punctuation">{</span><span>
-</span></span><span><span></span><span class="token token">const</span><span> response </span><span class="token token operator">=</span><span></span><span class="token token">await</span><span></span><span class="token token">fetch</span><span class="token token punctuation">(</span><span class="token token">'https://api.perplexity.ai/chat/completions'</span><span class="token token punctuation">,</span><span></span><span class="token token punctuation">{</span><span>
-</span></span><span><span>    method</span><span class="token token operator">:</span><span></span><span class="token token">'POST'</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>    headers</span><span class="token token operator">:</span><span></span><span class="token token punctuation">{</span><span>
-</span></span><span><span></span><span class="token token string-property property">'Authorization'</span><span class="token token operator">:</span><span></span><span class="token token template-string template-punctuation">`</span><span class="token token template-string">Bearer </span><span class="token token template-string interpolation interpolation-punctuation punctuation">${</span><span class="token token template-string interpolation">process</span><span class="token token template-string interpolation punctuation">.</span><span class="token token template-string interpolation">env</span><span class="token token template-string interpolation punctuation">.</span><span class="token token template-string interpolation constant">PPLX_KEY</span><span class="token token template-string interpolation interpolation-punctuation punctuation">}</span><span class="token token template-string template-punctuation">`</span><span class="token token punctuation">,</span><span>
-</span></span><span><span></span><span class="token token string-property property">'Content-Type'</span><span class="token token operator">:</span><span></span><span class="token token">'application/json'</span><span>
-</span></span><span><span></span><span class="token token punctuation">}</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>    body</span><span class="token token operator">:</span><span></span><span class="token token constant">JSON</span><span class="token token punctuation">.</span><span class="token token">stringify</span><span class="token token punctuation">(</span><span class="token token punctuation">{</span><span>
-</span></span><span><span>      model</span><span class="token token operator">:</span><span></span><span class="token token">'sonar-deep-research'</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>      messages</span><span class="token token operator">:</span><span></span><span class="token token punctuation">[</span><span class="token token punctuation">{</span><span> role</span><span class="token token operator">:</span><span></span><span class="token token">'user'</span><span class="token token punctuation">,</span><span> content</span><span class="token token operator">:</span><span></span><span class="token token template-string template-punctuation">`</span><span class="token token template-string">Verify this claim: "</span><span class="token token template-string interpolation interpolation-punctuation punctuation">${</span><span class="token token template-string interpolation">claim</span><span class="token token template-string interpolation interpolation-punctuation punctuation">}</span><span class="token token template-string">"</span><span class="token token template-string template-punctuation">`</span><span></span><span class="token token punctuation">}</span><span class="token token punctuation">]</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>      search_domain_filter</span><span class="token token operator">:</span><span></span><span class="token token punctuation">[</span><span class="token token">'gov'</span><span class="token token punctuation">,</span><span></span><span class="token token">'edu'</span><span class="token token punctuation">]</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>      return_related_questions</span><span class="token token operator">:</span><span></span><span class="token token boolean">true</span><span class="token token punctuation">,</span><span>
-</span></span><span><span>      max_tokens</span><span class="token token operator">:</span><span></span><span class="token token">1000</span><span>
-</span></span><span><span></span><span class="token token punctuation">}</span><span class="token token punctuation">)</span><span>
-</span></span><span><span></span><span class="token token punctuation">}</span><span class="token token punctuation">)</span><span class="token token punctuation">;</span><span>
-</span></span><span><span></span><span class="token token">return</span><span> response</span><span class="token token punctuation">.</span><span class="token token">json</span><span class="token token punctuation">(</span><span class="token token punctuation">)</span><span class="token token punctuation">;</span><span>
-</span></span><span><span></span><span class="token token punctuation">}</span><span class="token token punctuation">;</span><span>
-</span></span><span></span></code></span></div></div></div></pre>
-
----
-
-## Contributing
-
-- Use Husky for pre-commit checks (lint, type-check).
-- All code must be TypeScript and pass CI (GitHub Actions).
-- Use Docker for local development of backend services.
+```typescript
+// Client-side hook to subscribe to live debate updates
+const { debate, isLive } = useRealtimeDebate(initialDebate);
+```
 
 ---
 
-## License
+## Project Structure (high-level)
 
-MIT
+```
+src/
+├─ app/                # Next.js route handlers & pages
+│  └─ api/             # REST / Edge routes (transcription, claims, queue)
+├─ components/         # Reusable UI & analytics components
+│  └─ analytics/       # Charts (verdict distribution, timelines, etc.)
+├─ lib/                # Core domain logic (queue, claim-detection, perplexity)
+│  └─ supabase/        # Client/server helpers & middleware
+scripts/               # Operational scripts (BullMQ worker, seeding)
+supabase/              # SQL migrations & config
+```
+
+- **Entry Points** – `src/app/page.tsx` (home), `src/app/api/*` (backend), `scripts/start-worker.ts` (worker).
+- **Domain Models** – See `src/lib/types.ts` for Debate, Claim, and Verdict enums.
 
 ---
 
-## Contact
+## Challenges & Learnings
 
-For questions or contributions, open an issue or contact the maintainer.
+- **Streaming Latency** – Balancing transcription speed versus accuracy required tuning Whisper vs Rev AI and caching partial segments.
+- **Structured AI Responses** – Parsing Perplexity's natural-language output into strict JSON demanded regex + robust fallbacks.
+- **Concurrency & Scaling** – BullMQ with exponential back-off and Redis cluster solved race conditions during peak bursts.
+- **Real-time Consistency** – Combining Supabase Realtime and Socket.io taught important lessons about duplicate events and idempotency.
 
 ---
 
-Answer from Perplexity: [pplx.ai/share](https://www.perplexity.ai/search/pplx.ai/share)
+## Future Improvements
+
+- 🌍 **Multi-Language Support** – Auto-detect language and switch transcription/fact-check models.
+- 🔄 **Contextual Re-verification** – Re-run fact-checks when new evidence appears (e.g., a follow-up article).
+- 🔐 **User Auth & Roles** – Allow verified analysts to override AI verdicts.
+- 👀 **Observer Mode** – Lightweight embed widget for live streams.
+- 🧪 **Testing Suite** – Integration tests with Vitest + MSW.
+- ☁️ **Cloudflare Worker Edge Ingest** – Push first stage of pipeline even closer to viewers.
+
+---
+
+## Credits & Inspiration
+
+- **Perplexity AI** – Fact-checking API.
+- **Supabase** – Postgres + Realtime backbone.
+- **BullMQ & RedisJSON** – Queue & real-time store.
+- **Tailwind CSS / shadcn/ui** – UI framework inspiration.
+- _Politics-focused fact-checking sites_ such as PolitiFact and FactCheck.org provided UX ideas.
+- Project scaffold initially inspired by the [Next.js 14 App Router example](https://github.com/vercel/next.js/tree/canary/examples/app-directory).
+
+---
+
+> Built with ❤️, caffeine, and a desire for a more informed public discourse.
